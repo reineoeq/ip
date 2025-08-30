@@ -1,6 +1,7 @@
 package rainy;
 
 import commands.Command;
+import commands.ErrorCommand;
 import exception.RainyException;
 import parser.Parser;
 import storage.Storage;
@@ -16,6 +17,7 @@ public class Rainy {
     private Storage storage;
     private TaskList tasks;
     private Ui ui;
+    private String commandType;
 
     /**
      * Constructs a Rainy instance with the given file path for persistent storage.
@@ -27,6 +29,15 @@ public class Rainy {
         storage = new Storage(filePath);
         tasks = new TaskList(storage.load());
     }
+
+    public Rainy() {
+        this("data/rainy.txt"); // call the existing constructor with default path
+    }
+
+    public String getWelcomeMessage() {
+        return ui.showWelcome();
+    }
+
 
     /**
      * Runs the main event loop of the application.
@@ -55,5 +66,26 @@ public class Rainy {
      */
     public static void main(String[] args) {
         new Rainy("data/rainy.txt").run();
+    }
+
+    /**
+     * Generates a response for the user's chat message.
+     */
+    public String getResponse(String input) throws RainyException {
+        try {
+            Command c = Parser.parse(input);
+            c.execute(tasks, ui, storage);
+            commandType = c.getClass().getSimpleName();
+            return c.getMessage();
+        } catch (RainyException e) {
+            Command c = new ErrorCommand(e.getMessage());
+            c.execute(tasks, ui, storage);
+            commandType = c.getClass().getSimpleName();
+            return c.getMessage();
+        }
+    }
+
+    public String getCommandType() {
+        return commandType;
     }
 }
